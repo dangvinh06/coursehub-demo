@@ -1,3 +1,4 @@
+
 # 3. Mô phỏng dữ liệu bằng list và dictionary
 students = [
     {"id": "22000001", "name": "Nguyen Minh Anh", "major": "KHDL"},
