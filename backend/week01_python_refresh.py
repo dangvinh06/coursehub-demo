@@ -80,3 +80,68 @@ def search_courses(keyword):
     return results
 
 print(search_courses("web"))
+
+
+
+
+# VII. BÀI TẬP TỰ LUYỆN
+
+#1. Hoàn thiện hàm đăng ký học phần:
+# Danh sách lưu các bản ghi đăng ký thành công
+enrollments = []
+
+def enroll_student(student_id, course_code):
+    # Kiểm tra sinh viên có tồn tại hay không
+    student = next((s for s in students if s["id"] == student_id), None)
+    if not student:
+        return f"Lỗi: Không tìm thấy sinh viên có mã '{student_id}'."
+
+    # Kiểm tra học phần có tồn tại hay không
+    course = next((c for c in courses if c["code"].lower() == course_code.strip().lower()), None)
+    if not course:
+        return f"Lỗi: Không tìm thấy học phần có mã '{course_code}'."
+
+    # Kiểm tra sinh viên đã đăng ký học phần này chưa (trùng lặp)
+    already_enrolled = any(
+        e["student_id"] == student_id and e["course_code"].lower() == course["code"].lower()
+        for e in enrollments
+    )
+    if already_enrolled:
+        return f"Lỗi: Sinh viên '{student['name']}' đã đăng ký học phần '{course['name']}' trước đó."
+
+    # Kiểm tra lớp còn chỗ hay không
+    if course["enrolled"] >= course["capacity"]:
+        return f"Lỗi: Lớp học phần '{course['name']}' đã đầy (đã đủ {course['capacity']} sinh viên)."
+
+    # 5. Nếu thỏa mãn tất cả: thêm vào enrollments và tăng số lượng enrolled
+    new_enrollment = {
+        "student_id": student_id,
+        "course_code": course["code"]
+    }
+    enrollments.append(new_enrollment)
+    course["enrolled"] += 1
+
+    return f"Thành công: Đã đăng ký học phần '{course['name']}' cho sinh viên '{student['name']}'."
+
+
+#2. Kiểm tra chương trình với tối thiểu 05 tình huống:
+print("\n--- BẮT ĐẦU CHẠY KIỂM THỬ ENROLL_STUDENT ---")
+
+# Giả sử trong file ban đầu có:
+# students = [{"id": "SV01", "name": "Nguyen Van A"}, ...]
+# courses = [{"code": "CS101", "name": "Lap trinh Python", "capacity": 30, "enrolled": 29}, ...]
+
+# Đăng ký thành công
+print("Test 1 (Thành công):", enroll_student(students[0]["id"], "INT2204"))
+
+# Đăng ký trùng
+print("Test 2 (Trùng lặp):", enroll_student(students[0]["id"], "INT2204"))
+
+# Lớp đầy (CS101 sau Test 1 đã đạt sức chứa tối đa)
+print("Test 3 (Lớp đầy):", enroll_student(students[1]["id"] if len(students) > 1 else students[0]["id"], "INT2205"))
+
+# Mã học phần không tồn tại
+print("Test 4 (Mã học phần sai):", enroll_student(students[0]["id"], "UNKNOWN999"))
+
+# Mã sinh viên không tồn tại
+print("Test 5 (Mã sinh viên sai):", enroll_student("SV999", "INT2204"))
