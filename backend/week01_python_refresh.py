@@ -113,7 +113,7 @@ def enroll_student(student_id, course_code):
     if course["enrolled"] >= course["capacity"]:
         return f"Lỗi: Lớp học phần '{course['name']}' đã đầy (đã đủ {course['capacity']} sinh viên)."
 
-    # 5. Nếu thỏa mãn tất cả: thêm vào enrollments và tăng số lượng enrolled
+    # Nếu thỏa mãn tất cả: thêm vào enrollments và tăng số lượng enrolled
     new_enrollment = {
         "student_id": student_id,
         "course_code": course["code"]
