@@ -1,0 +1,1 @@
+ALTER TABLE enrollment_events ADD COLUMN IF NOT EXISTS note VARCHAR(200);
