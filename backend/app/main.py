@@ -508,3 +508,67 @@ def get_enrollment_events(
     return [dict(row) for row in rows]
 
 
+# Bài 2: Kiểm thử rollback
+
+@app.post("/demo-rollback-test")
+def demo_rollback_test(student_id: str = "SV001", course_id: str = "CS101", db: Session = Depends(get_db)):
+    """
+    Endpoint demo cố ý gây lỗi ở bảng enrollment_events để test transaction rollback,
+    đảm bảo bảng enrollments không bị tăng dữ liệu rác khi xảy ra lỗi.
+    """
+    try:
+        # Insert thành công vào bảng enrollments
+        db.execute(
+            text("INSERT INTO enrollments (student_id, course_id, status) VALUES (:s_id, :c_id, 'enrolled')"),
+            {"s_id": student_id, "c_id": course_id}
+        )
+        
+        # Cố ý làm INSERT thất bại ở bảng enrollment_events (vi phạm ràng buộc hoặc truyền sai kiểu dữ liệu)
+        db.execute(
+            text("INSERT INTO enrollment_events (enrollment_id, event_type) VALUES (99999999, 'INVALID_EVENT_TYPE_FOR_ROLLBACK_TEST')"),
+        )
+        
+        db.commit()
+        return {"message": "Transaction thành công (không có lỗi xảy ra)"}
+        
+    except Exception as e:
+        db.rollback()  # Thực hiện rollback toàn bộ thay đổi
+        return {
+            "status": "rolled_back",
+            "message": "Đã xảy ra lỗi, transaction đã được rollback thành công!",
+            "error_detail": str(e)
+        }
+
+
+# Bài 3: Truy vấn nghiệp vụ & Index
+
+@app.get("/demo-business-query")
+def demo_business_query(
+    class_section_id: Optional[str] = Query(None, description="Lọc theo mã lớp học phần"),
+    event_type: Optional[str] = Query(None, description="Lọc theo loại sự kiện"),
+    db: Session = Depends(get_db)
+):
+    """
+    Truy vấn thống kê trên bảng enrollment_events kết hợp với enrollments 
+    dựa trên class_section_id, event_type và thời gian (phục vụ đo hiệu năng Index).
+    """
+    sql = """
+        SELECT EE.id, EE.enrollment_id, EE.event_type, EE.occurred_at, EE.note
+        FROM enrollment_events EE
+        JOIN enrollments E ON EE.enrollment_id = E.id
+        WHERE 1=1
+    """
+    params = {}
+    
+    if class_section_id:
+        sql += " AND E.class_section_id = :class_section_id"
+        params["class_section_id"] = class_section_id
+        
+    if event_type:
+        sql += " AND EE.event_type = :event_type"
+        params["event_type"] = event_type
+        
+    sql += " ORDER BY EE.occurred_at DESC LIMIT 20"
+    
+    rows = db.execute(text(sql), params).mappings().all()
+    return [dict(row) for row in rows]
