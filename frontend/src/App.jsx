@@ -4,6 +4,10 @@ import Notice from "./components/Notice.jsx";
 import SectionTable from "./components/SectionTable.jsx";
 import EnrollmentList from "./components/EnrollmentList.jsx";
 
+// Import các component bài tập thực hành đã tạo
+import StudentForm from "./components/StudentForm.jsx";
+import StudentHistory from "./components/StudentHistory.jsx";
+
 export default function App() {
   const [draftId, setDraftId] = useState("22000004");
   const [studentId, setStudentId] = useState("22000004");
@@ -17,6 +21,9 @@ export default function App() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState({ kind: "info", text: "" });
   const [refresh, setRefresh] = useState(0);
+
+  // State cho Bài 2: Lọc theo mã học phần
+  const [selectedCourse, setSelectedCourse] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -93,16 +100,19 @@ export default function App() {
     }
   }
 
+  // Lọc danh sách lớp học phần (kết hợp từ khóa, chỗ trống VÀ lọc học phần Bài 2)
   const keyword = search.trim().toLowerCase();
   const rows = sections.map((section) => ({
     ...section,
     course_name: courses.find((course) => course.code === section.course_code)?.name
       ?? section.course_code,
     registered: enrollments.some((item) => item.class_section_id === section.class_id),
-  })).filter((row) => (
-    `${row.class_id} ${row.course_code} ${row.course_name}`.toLowerCase().includes(keyword)
-    && (!onlyAvailable || row.remaining > 0)
-  ));
+  })).filter((row) => {
+    const matchKeyword = `${row.class_id} ${row.course_code} ${row.course_name}`.toLowerCase().includes(keyword);
+    const matchAvailable = !onlyAvailable || row.remaining > 0;
+    const matchCourse = !selectedCourse || row.course_code === selectedCourse; // Bài 2
+    return matchKeyword && matchAvailable && matchCourse;
+  });
 
   const disabled = loading || busy || Boolean(error);
 
@@ -119,6 +129,7 @@ export default function App() {
         Mỗi trường thực hành. Nhập mã sinh viên để đổi dữ liệu, không phải đăng nhập.
       </p>
 
+      {/* Bài 1: Sử dụng component StudentForm đã tách */}
       <section className="panel">
         <h2>1. Chọn sinh viên</h2>
         <form className="student-form" onSubmit={chooseStudent}>
@@ -147,6 +158,12 @@ export default function App() {
         </p>
       </section>
 
+      {/* Bài 3 & 4: Màn hình lịch sử sự kiện của sinh viên có phân trang */}
+      <section className="panel">
+        <h2>Lịch sử sự kiện đăng ký</h2>
+        <StudentHistory studentId={studentId} />
+      </section>
+
       <Notice kind={notice.kind}>{notice.text}</Notice>
       <Notice kind="error">{error}</Notice>
       {loading && <Notice>Đang tải dữ liệu từ API...</Notice>}
@@ -155,6 +172,25 @@ export default function App() {
         <div className="workspace">
           <section className="panel">
             <h2>2. Danh sách lớp học phần</h2>
+
+            {/* Bài 2: Dropdown lọc theo học phần */}
+            <div className="form-group" style={{ marginBottom: "15px" }}>
+              <label htmlFor="course-filter"><strong>Lọc theo môn học: </strong></label>
+              <select
+                id="course-filter"
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                style={{ padding: "6px", marginLeft: "8px", borderRadius: "4px" }}
+              >
+                <option value="">-- Tất cả học phần --</option>
+                {courses.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} - {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="filters">
               <label htmlFor="search">Tìm lớp / học phần</label>
               <input
@@ -172,11 +208,19 @@ export default function App() {
                 Chỉ hiện lớp còn chỗ
               </label>
             </div>
-            <SectionTable
-              rows={rows}
-              disabled={disabled}
-              onEnroll={(id) => changeEnrollment(id)}
-            />
+
+            {/* Bài 2: Xử lý trạng thái rỗng (Empty state) */}
+            {rows.length === 0 ? (
+              <div className="empty-state" style={{ padding: "20px", textAlign: "center", color: "#666", background: "#f9f9f9", borderRadius: "4px" }}>
+                Không có lớp học phần nào phù hợp với bộ lọc.
+              </div>
+            ) : (
+              <SectionTable
+                rows={rows}
+                disabled={disabled}
+                onEnroll={(id) => changeEnrollment(id)}
+              />
+            )}
           </section>
 
           <section className="panel">

@@ -38,7 +38,7 @@ app = FastAPI(
 # Buoi 5: chi cho phép frontend local gọi API qua trình duyệt.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type"],
@@ -518,3 +518,20 @@ def get_enrollment_events(
     return [dict(row) for row in rows]
 
 
+
+# Bài 4 (Bài tập tự thực hành Buổi 5): Phân trang và tìm kiếm phía Server
+@app.get("/enrollment-events")
+def get_enrollment_events(
+    student_id: int | None = None,
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    offset = (page - 1) * limit
+    query = db.query(EnrollmentEvent)
+    
+    if student_id:
+        query = query.filter(EnrollmentEvent.student_id == student_id)
+        
+    events = query.order_by(EnrollmentEvent.id.desc()).offset(offset).limit(limit).all()
+    return events

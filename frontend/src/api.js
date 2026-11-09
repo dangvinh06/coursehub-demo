@@ -39,3 +39,21 @@ export async function api(path, { method = "GET", body, signal } = {}) {
   }
   return data;
 }
+
+const API_BASE_URL = "http://localhost:8000";
+
+// Bài 2 (Bài tập tự thực hành Buổi 5): Lấy danh sách học phần
+export async function getCourses() {
+  const res = await fetch(`${API_BASE_URL}/courses`);
+  if (!res.ok) throw new Error("Không thể tải danh sách học phần");
+  return res.json();
+}
+
+// Bài 3 (Bài tập tự thực hành Buổi 5): Lấy lịch sử sự kiện đăng ký có phân trang
+export async function getStudentHistory(studentId, page = 1, limit = 10) {
+  const res = await fetch(
+    `${API_BASE_URL}/enrollment-events?student_id=${studentId}&page=${page}&limit=${limit}`
+  );
+  if (!res.ok) throw new Error("Không thể tải nhật ký đăng ký");
+  return res.json();
+}
