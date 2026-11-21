@@ -25,6 +25,11 @@ jobs:
       - name: Test backend contract
         env:
           PYTHONPATH: ${{ github.workspace }}
+          DB_HOST: 127.0.0.1
+          DB_PORT: "5432"
+          DB_NAME: coursehub_test
+          DB_USER: postgres
+          DB_PASSWORD: password
         run: pytest backend/tests -q
 
   frontend:
