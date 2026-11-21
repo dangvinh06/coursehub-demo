@@ -24,12 +24,8 @@ jobs:
         run: python -m compileall backend
       - name: Test backend contract
         env:
-          DB_HOST: ${{ vars.DB_HOST }}
-          DB_PORT: ${{ vars.DB_PORT }}
-          DB_NAME: ${{ vars.DB_NAME }}
-          DB_USER: ${{ vars.DB_USER }}
-          DB_PASSWORD: ${{ vars.DB_PASSWORD }}
-        run: python -m pytest backend/tests -q
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest backend/tests -q
 
   frontend:
     runs-on: ubuntu-latest
